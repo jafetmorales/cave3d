@@ -1,9 +1,10 @@
-varying vec4 vertex;
+varying vec4 vertex, color;
 varying vec3 normal, vNormal, lightDir, eyeVec;
 varying float att;
 
 void main()
 {	
+	color = gl_Color;  
 	normal = normalize(gl_Normal);
 	vertex = gl_Vertex;
 	

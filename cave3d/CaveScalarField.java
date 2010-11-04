@@ -12,18 +12,17 @@ final class CaveScalarField implements ScalarField {
 
 	private final Vector3f tmp = new Vector3f();
 	
-	private final float d;
-	
 	private final Noise3D[] noises;
 	
 	private final Noise3D stalactites;
+	
+	private final Noise3D colors;
 
-	private int voxelCount;
+	private int voxelCount;	
 	
 	CaveScalarField(long seed, float size, float voxelsize) {
-		long time = System.currentTimeMillis();
         Random random = new Random(seed);
-		this.d = voxelsize;
+
 		this.voxelCount = (int) (size / voxelsize);
 		this.noises = new Noise3D[] {
 				new Noise3D(random, voxelCount, size / 1f, false),
@@ -35,40 +34,40 @@ final class CaveScalarField implements ScalarField {
 //				new Noise3D(random, voxelCount, size / 64f),
 //				new Noise3D(random, voxelCount, size / 128f),
 			};
-		stalactites = new Noise3D(random, voxelCount, size / 8f, 0, size / 8f, true);
+		stalactites = new Noise3D(random, voxelCount, new Vector3f(size / 16, size, size / 16), 0, size / 10f, true);
+		colors = new Noise3D(random, voxelCount, new Vector3f(size / 4, size / 4, size / 4), 0.7f, 1f, true);
 	}
 
 
-	public float calculate(Vector3f point) {
+	public float calculate(final Vector3f point) {
 		float density = 0;
-		float x = point.x;
-		float y = point.y;
-		float z = point.z;
-		for (int i = noises.length - 1; i >= 0; i--) {
-			density += noises[i].getNoise(x, y, z);
+		for (int i = 0; i < noises.length; i++) {
+			density += noises[i].getNoise(point);
 		}
-		density += stalactites.getNoise(2f*x, 0.2f * y, 2f*z);
+	
+		density += stalactites.getNoise(point);
 		return density;
 	}
 	
 	/**
 	 * Computing the Normal via a Gradient
 	 */
-	public void normal(Vector3f point, Vector3f result) {	
+	public void normal(Vector3f point, Vector3f result) {
+		final float voxelsize = 4f;
 		// x
-		tmp.set(point.x - d, point.y, point.z);
+		tmp.set(point.x - voxelsize, point.y, point.z);
 		result.x = calculate(tmp);
-		tmp.set(point.x + d, point.y, point.z);
+		tmp.set(point.x + voxelsize, point.y, point.z);
 		result.x -= calculate(tmp);
 		// y
-		tmp.set(point.x, point.y - d, point.z);
+		tmp.set(point.x, point.y - voxelsize, point.z);
 		result.y = calculate(tmp);
-		tmp.set(point.x, point.y + d, point.z);
+		tmp.set(point.x, point.y + voxelsize, point.z);
 		result.y -= calculate(tmp);
 		// z
-		tmp.set(point.x, point.y, point.z - d);
+		tmp.set(point.x, point.y, point.z - voxelsize);
 		result.z = calculate(tmp);
-		tmp.set(point.x, point.y, point.z + d);
+		tmp.set(point.x, point.y, point.z + voxelsize);
 		result.z -= calculate(tmp);
 		
 		result.normalizeLocal();
@@ -76,6 +75,11 @@ final class CaveScalarField implements ScalarField {
 	
 	public void textureCoords(Vector3f point, Vector2f result) {}
 	
-	public void color(Vector3f point, ColorRGBA result) {}
+	public void color(Vector3f point, ColorRGBA result) {
+		float c1 = colors.getNoise(point);
+		float c2 = stalactites.getNoise(point) / stalactites.getAmplitude();
+		result.set(c2, c2, c2, 1f);
+
+	}
 
 }
