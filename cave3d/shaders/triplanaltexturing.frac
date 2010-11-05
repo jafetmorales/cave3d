@@ -10,7 +10,7 @@ void main(void)
 {
 	// tri-planar texture bending factor
  	vec3 blending = (abs( normal ) - 0.2) * 7.0;  
-    blending = normalize(max(blending, 0));      // Force weights to sum to 1.0 (very important!)  
+    blending = normalize(max(blending, 0.0));      // Force weights to sum to 1.0 (very important!)  
     blending /= (blending.x + blending.y + blending.z ).xxx;
     
     //blending = abs( normal );
@@ -29,9 +29,9 @@ void main(void)
 	
 	
 	// Blend the results of the 3 planar projections.
-	vec3 nor1 = signedBlending.x != 0 ? texture2D( samplerBump, coords.yz ).zxy - 0.5 : vec3(0,0,0);
-    vec3 nor2 = signedBlending.y != 0 ? texture2D( samplerBump, coords.zx ).yzx - 0.5 : vec3(0,0,0);
-    vec3 nor3 = signedBlending.z != 0 ? texture2D( samplerBump, coords.xy ).xyz - 0.5 : vec3(0,0,0);
+	vec3 nor1 = signedBlending.x != 0.0 ? texture2D( samplerBump, coords.yz ).zxy - 0.5 : vec3(0.0, 0.0, 0.0);
+    vec3 nor2 = signedBlending.y != 0.0 ? texture2D( samplerBump, coords.zx ).yzx - 0.5 : vec3(0.0, 0.0, 0.0);
+    vec3 nor3 = signedBlending.z != 0.0 ? texture2D( samplerBump, coords.xy ).xyz - 0.5 : vec3(0.0, 0.0, 0.0);
     vec3 norBlended = nor1 * signedBlending.x + nor2 * signedBlending.y + nor3 * signedBlending.z;
 
 	vec3 N = normalize(gl_NormalMatrix * norBlended);
@@ -43,7 +43,7 @@ void main(void)
 	
     vec3 E = normalize(eyeVec);
  	vec3 R = reflect(-L, N);
- 	float specular = 0.25 * pow( max(dot(R, E), 0.0), 64 ) * att;                   
+ 	float specular = 0.25 * pow( max(dot(R, E), 0.0), 64.0 ) * att;                   
  	colBlended += specular * att;
 
 	gl_FragColor = colBlended;
