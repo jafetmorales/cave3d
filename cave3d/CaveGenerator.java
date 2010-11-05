@@ -24,7 +24,7 @@ public class CaveGenerator extends SimpleGame {
 	public static void main(String[] args) {
 		CaveGenerator app = new CaveGenerator();
 		app.setConfigShowMode(ConfigShowMode.AlwaysShow);
-		MouseInput.get().setCursorVisible(true);
+		//MouseInput.get().setCursorVisible(true);
 		app.start();
 	}
 	
@@ -68,7 +68,7 @@ public class CaveGenerator extends SimpleGame {
         TextureState textureState = DisplaySystem.getDisplaySystem().getRenderer().createTextureState();
         float maxAnisotropic = textureState.getMaxAnisotropic();
 		textureState.setTexture(createTexture("stone.jpg",        Texture.MinificationFilter.Trilinear, Texture.MagnificationFilter.Bilinear, maxAnisotropic), 0);
-		textureState.setTexture(createTexture("stone1-normal.jpg", Texture.MinificationFilter.Trilinear, Texture.MagnificationFilter.Bilinear, maxAnisotropic), 1 );
+		textureState.setTexture(createTexture("stone-normal.jpg", Texture.MinificationFilter.Trilinear, Texture.MagnificationFilter.Bilinear, maxAnisotropic), 1 );
 		caveNode.setRenderState(textureState);
 		
 		// shader state
