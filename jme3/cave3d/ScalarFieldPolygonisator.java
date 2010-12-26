@@ -1,4 +1,4 @@
-package cave;
+package cave3d;
 /*
  * Copyright (c) 2003-2009 jMonkeyEngine
  * All rights reserved.

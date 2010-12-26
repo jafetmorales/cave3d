@@ -1,4 +1,4 @@
-package cave;
+package cave3d;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;

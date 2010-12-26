@@ -1,4 +1,4 @@
-package cave;
+package cave3d;
 import com.jme3.math.FastMath;
 import java.util.Random;
 

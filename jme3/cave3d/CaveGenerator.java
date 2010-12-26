@@ -1,4 +1,4 @@
-package cave;
+package cave3d;
 import com.jme3.app.SimpleApplication;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.light.PointLight;
