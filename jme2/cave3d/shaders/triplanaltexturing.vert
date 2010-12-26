@@ -20,6 +20,5 @@ void main()
 	att = 1.0 / ( gl_LightSource[0].constantAttenuation + 
 	             (gl_LightSource[0].linearAttenuation * d) + 
 	             (gl_LightSource[0].quadraticAttenuation * d * d * d));
-	
 	gl_Position = ftransform();
 } 

@@ -24,11 +24,11 @@ public class CaveGenerator extends SimpleGame {
 	public static void main(String[] args) {
 		CaveGenerator app = new CaveGenerator();
 		app.setConfigShowMode(ConfigShowMode.AlwaysShow);
-		//MouseInput.get().setCursorVisible(true);
+		MouseInput.get().setCursorVisible(true);
 		app.start();
 	}
 	
-    private final static long SEED = "random-cave".hashCode();
+    private final static long SEED = "ABC".hashCode();
  
     private CaveNode caveNode = null; 
     
@@ -40,6 +40,7 @@ public class CaveGenerator extends SimpleGame {
 	
 	protected void simpleInitGame() {
 		display.setTitle("Cave Generator");
+		
 		
 		try {
 			ClassLoader classLoader = CaveGenerator.class.getClassLoader();
@@ -61,7 +62,7 @@ public class CaveGenerator extends SimpleGame {
 		PointLight pl = (PointLight)lightState.get(0);
 		pl.setConstant(1f);
 		pl.setLinear(0);
-		pl.setQuadratic(0.000005f);
+		pl.setQuadratic(0.000003f);
 		pl.setAttenuate(true);	
 	
 		// texture states

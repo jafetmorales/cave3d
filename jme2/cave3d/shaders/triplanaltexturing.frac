@@ -33,19 +33,19 @@ void main(void)
     vec3 nor2 = signedBlending.y != 0.0 ? texture2D( samplerBump, coords.zx ).yzx - 0.5 : vec3(0.0, 0.0, 0.0);
     vec3 nor3 = signedBlending.z != 0.0 ? texture2D( samplerBump, coords.xy ).xyz - 0.5 : vec3(0.0, 0.0, 0.0);
     vec3 norBlended = nor1 * signedBlending.x + nor2 * signedBlending.y + nor3 * signedBlending.z;
+    //vec3 norBlended = normal;
 
 	vec3 N = normalize(gl_NormalMatrix * norBlended);
 	vec3 L = normalize(lightDir);
 	
 	float lambertTerm = max(0.1, dot(N,L));
 	
-	colBlended = colBlended * lambertTerm * att;
+	colBlended = colBlended * lambertTerm;
 	
     vec3 E = normalize(eyeVec);
  	vec3 R = reflect(-L, N);
- 	float specular = 0.25 * pow( max(dot(R, E), 0.0), 64.0 ) * att;                   
- 	colBlended += specular * att;
+ 	float specular = 0.25 * pow( max(dot(R, E), 0.0), 64.0 );                   
 
-	gl_FragColor = colBlended;
+	gl_FragColor = (colBlended + specular) * att;
 
 }

@@ -50,10 +50,12 @@ public class CaveNode extends Node {
 		for(int x = -d; x <= d; x++) {
 			for(int y = -d; y <= d; y++) {
 				for(int z = -d; z <= d; z++) {
-					key.set(camGridCoord).addLocal(x,y,z);
-					box.getCenter().set(key).multLocal(meshSize);
-					if(cam.contains(box) != Camera.FrustumIntersect.Outside) {
-						generatorThread.addcaveMesh(key);
+					if(Math.sqrt(x * x + y * y + z * z) <= 4.5) {
+						key.set(camGridCoord).addLocal(x,y,z);
+						box.getCenter().set(key).multLocal(meshSize);
+						if(cam.contains(box) != Camera.FrustumIntersect.Outside) {
+							generatorThread.addcaveMesh(key);
+						}
 					}
 				}
 			}
@@ -104,6 +106,7 @@ public class CaveNode extends Node {
 			        mesh.setModelBound(new BoundingBox());
 			        mesh.updateModelBound();
 					attachChild(mesh);
+					//System.out.println(todoStack.size() + "  " + getQuantity());
 				}
 				try {
 					synchronized (lock) {

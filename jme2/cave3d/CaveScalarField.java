@@ -34,7 +34,7 @@ final class CaveScalarField implements ScalarField {
 //				new Noise3D(random, voxelCount, size / 64f),
 //				new Noise3D(random, voxelCount, size / 128f),
 			};
-		stalactites = new Noise3D(random, voxelCount, new Vector3f(size / 16, size, size / 16), 0, size / 10f, true);
+		stalactites = new Noise3D(random, voxelCount, new Vector3f(size / 16, size, size / 16), 0, size / 2f, true);
 		colors = new Noise3D(random, voxelCount, new Vector3f(size / 4, size / 4, size / 4), 0.7f, 1f, true);
 	}
 
@@ -76,9 +76,9 @@ final class CaveScalarField implements ScalarField {
 	public void textureCoords(Vector3f point, Vector2f result) {}
 	
 	public void color(Vector3f point, ColorRGBA result) {
-		float c1 = colors.getNoise(point);
-		float c2 = stalactites.getNoise(point) / stalactites.getAmplitude();
-		result.set(c2, c2, c2, 1f);
+		//float c1 = colors.getNoise(point);
+		//float c2 = stalactites.getNoise(point) / stalactites.getAmplitude();
+		result.set(1f, 1f, 1f, 1f);
 
 	}
 
