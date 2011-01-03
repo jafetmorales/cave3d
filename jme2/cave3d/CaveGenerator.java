@@ -1,5 +1,7 @@
 package cave3d;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.jme.app.SimpleGame;
 import com.jme.image.Texture;
@@ -7,9 +9,9 @@ import com.jme.input.MouseInput;
 import com.jme.light.PointLight;
 import com.jme.renderer.Renderer;
 import com.jme.scene.state.CullState;
+import com.jme.scene.state.CullState.Face;
 import com.jme.scene.state.GLSLShaderObjectsState;
 import com.jme.scene.state.TextureState;
-import com.jme.scene.state.CullState.Face;
 import com.jme.system.DisplaySystem;
 import com.jme.util.TextureManager;
 import com.jme.util.resource.ResourceLocatorTool;
@@ -22,9 +24,9 @@ public class CaveGenerator extends SimpleGame {
 
 
 	public static void main(String[] args) {
+		Logger.getLogger("com.jme").setLevel(Level.WARNING);
 		CaveGenerator app = new CaveGenerator();
 		app.setConfigShowMode(ConfigShowMode.AlwaysShow);
-		MouseInput.get().setCursorVisible(true);
 		app.start();
 	}
 	
@@ -39,6 +41,8 @@ public class CaveGenerator extends SimpleGame {
 	}
 	
 	protected void simpleInitGame() {
+		// setCursorVisible(true) for debugging in Ubuntu
+		MouseInput.get().setCursorVisible(true);
 		display.setTitle("Cave Generator");
 		
 		

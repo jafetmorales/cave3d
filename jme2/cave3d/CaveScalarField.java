@@ -10,14 +10,8 @@ import com.jme.renderer.ColorRGBA;
  */
 final class CaveScalarField implements ScalarField {
 
-	private final Vector3f tmp = new Vector3f();
-	
 	private final Noise3D[] noises;
 	
-	private final Noise3D stalactites;
-	
-	private final Noise3D colors;
-
 	private int voxelCount;	
 	
 	CaveScalarField(long seed, float size, float voxelsize) {
@@ -28,58 +22,48 @@ final class CaveScalarField implements ScalarField {
 				new Noise3D(random, voxelCount, size / 1f, false),
 				new Noise3D(random, voxelCount, size / 2f, false),
 				new Noise3D(random, voxelCount, size / 4f, false),
+				new Noise3D(random, voxelCount, new Vector3f(size / 16, size, size / 16), 0, size / 2f, true),
 //				new Noise3D(random, voxelCount, size / 8f, false),
 //				new Noise3D(random, voxelCount, size / 16f),
 //				new Noise3D(random, voxelCount, size / 32f),
 //				new Noise3D(random, voxelCount, size / 64f),
 //				new Noise3D(random, voxelCount, size / 128f),
 			};
-		stalactites = new Noise3D(random, voxelCount, new Vector3f(size / 16, size, size / 16), 0, size / 2f, true);
-		colors = new Noise3D(random, voxelCount, new Vector3f(size / 4, size / 4, size / 4), 0.7f, 1f, true);
 	}
 
 
-	public float calculate(final Vector3f point) {
+	public final float calculate(final float x, final float y, final float z) {
 		float density = 0;
 		for (int i = 0; i < noises.length; i++) {
-			density += noises[i].getNoise(point);
+			density += noises[i].getNoise(x, y, z);
 		}
-	
-		density += stalactites.getNoise(point);
 		return density;
 	}
 	
 	/**
 	 * Computing the Normal via a Gradient
 	 */
-	public void normal(Vector3f point, Vector3f result) {
+	public final void normal(Vector3f point, Vector3f result) {
 		final float voxelsize = 4f;
 		// x
-		tmp.set(point.x - voxelsize, point.y, point.z);
-		result.x = calculate(tmp);
-		tmp.set(point.x + voxelsize, point.y, point.z);
-		result.x -= calculate(tmp);
+		result.x = calculate(point.x - voxelsize, point.y, point.z) - calculate(point.x + voxelsize, point.y, point.z);
 		// y
-		tmp.set(point.x, point.y - voxelsize, point.z);
-		result.y = calculate(tmp);
-		tmp.set(point.x, point.y + voxelsize, point.z);
-		result.y -= calculate(tmp);
+		result.y = calculate(point.x, point.y - voxelsize, point.z) - calculate(point.x, point.y + voxelsize, point.z);
 		// z
-		tmp.set(point.x, point.y, point.z - voxelsize);
-		result.z = calculate(tmp);
-		tmp.set(point.x, point.y, point.z + voxelsize);
-		result.z -= calculate(tmp);
+		result.z = calculate(point.x, point.y, point.z - voxelsize) - calculate(point.x, point.y, point.z + voxelsize);
 		
-		result.normalizeLocal();
+		float len = (float) Math.sqrt(result.x * result.x + result.y * result.y + result.z * result.z);
+		if(len > 0) {
+			len = 1f / len;
+			result.x *= len;
+			result.y *= len;
+			result.z *= len;
+		}
 	}
 	
-	public void textureCoords(Vector3f point, Vector2f result) {}
+	public final void textureCoords(Vector3f point, Vector2f result) {}
 	
-	public void color(Vector3f point, ColorRGBA result) {
-		//float c1 = colors.getNoise(point);
-		//float c2 = stalactites.getNoise(point) / stalactites.getAmplitude();
+	public final void color(Vector3f point, ColorRGBA result) {
 		result.set(1f, 1f, 1f, 1f);
-
 	}
-
 }

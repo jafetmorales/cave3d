@@ -105,7 +105,9 @@ public class CaveNode extends Node {
 					polygonisator.calculate(mesh, mesh.getWorldCenter(), 0f);
 			        mesh.setModelBound(new BoundingBox());
 			        mesh.updateModelBound();
-					attachChild(mesh);
+				    if(mesh.getVertexCount() > 0) {
+						attachChild(mesh);
+					}
 					//System.out.println(todoStack.size() + "  " + getQuantity());
 				}
 				try {

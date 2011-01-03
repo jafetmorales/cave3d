@@ -57,7 +57,7 @@ import com.jme.util.geom.BufferUtils;
  * @author basixs (replaced creation of objects with global 'calc' vectors, for better performance)
  * @author mazander (modified for cave3d)
  */
-public class ScalarFieldPolygonisator {
+final class ScalarFieldPolygonisator {
  
     private final Vector3f boxSize;
     private final float cubeSize;
@@ -82,10 +82,10 @@ public class ScalarFieldPolygonisator {
     private FloatBuffer colorBuffer;
     //
     // Temporary calc vars
-    private final ColorRGBA calcColor = new ColorRGBA();
-    private final Vector3f calcVector = new Vector3f();
-    private final Vector3f calcVector1 = new Vector3f();
-    private final Vector2f calcVector2f = new Vector2f();
+    private final ColorRGBA tmpColor = new ColorRGBA();
+    private final Vector3f tmpVector1 = new Vector3f();
+    private final Vector3f tmpVector2 = new Vector3f();
+    private final Vector2f tmpVector2f = new Vector2f();
 	private final Vector3f offset = new Vector3f();
 
 
@@ -103,11 +103,6 @@ public class ScalarFieldPolygonisator {
     }
 
     public void calculate( TriMesh mesh, Vector3f offset, float iso ) {
-    	this.offset.set(offset);
-        clearField();
-
-        populateFieldArray( field );
-
         vertexBuffer = mesh.getVertexBuffer();
         if( vertexBuffer == null ){
             vertexBuffer = BufferUtils.createFloatBuffer( 16000 );
@@ -151,8 +146,13 @@ public class ScalarFieldPolygonisator {
         } else{
             indexBuffer.clear();
         }
+        
+        interpol.clear();
+    	this.offset.set(offset);
 
-        calculateCells( iso );
+        if(populateFieldArray( field, iso )) {
+        	calculateCells( iso );
+        }
 
         indexBuffer.flip();
         mesh.setIndexBuffer( indexBuffer );
@@ -174,36 +174,13 @@ public class ScalarFieldPolygonisator {
         }
     }
 
-    protected void clearField() {
-        interpol.clear();
-
-        for( int x = 0; x < xSize; x++ ){
-            for( int y = 0; y < ySize; y++ ){
-                for( int z = 0; z < zSize; z++ ){
-                    values[x][y][z] = 0;
-                }
-            }
-        }
-    }
-
-    protected void gridToWorld( final int x, final int y, final int z, final Vector3f store ) {
+    private void gridToWorld( final int x, final int y, final int z, final Vector3f store ) {
         store.setX( x * cubeSize - boxSize.x + offset.x );
         store.setY( y * cubeSize - boxSize.y + offset.y );
         store.setZ( z * cubeSize - boxSize.z + offset.z );
     }
 
-//    protected void worldToGrid( final Vector3f world, final int[] store ) {
-//        worldToGrid( world.getX(), world.getY(), world.getZ(), store );
-//    }
-//
-//    protected void worldToGrid( final float x, final float y, final float z, final int[] store ) {
-//        store[0] = new Float( ( x + boxSize.x ) / cubeSize + 0.5f ).intValue();
-//        store[1] = new Float( ( y + boxSize.y ) / cubeSize + 0.5f ).intValue();
-//        store[2] = new Float( ( z + boxSize.z ) / cubeSize + 0.5f ).intValue();
-//    }
-
-
-    protected void calculateCells( float iso ) {
+    private void calculateCells( float iso ) {
         for( int xk = 0; xk < xSize; xk++ ){
             for( int yk = 0; yk < ySize; yk++ ){
                 for( int zk = 0; zk < zSize; zk++ ){
@@ -212,19 +189,62 @@ public class ScalarFieldPolygonisator {
             }
         }
     }
+    
+    private int populateField(ScalarField field, final float iso, final int xMin, final int xMax,
+			final int yMin, final int yMax, final int zMin, final int zMax) {
+		int isoCount = 0;
+		for (int x = xMin; x <= xMax; x++) {
+			for (int y = yMin; y <= yMax; y++) {
+				for (int z = zMin; z <= zMax; z++) {
+					gridToWorld(x, y, z, tmpVector1);
+					values[x][y][z] = field.calculate(tmpVector1.x, tmpVector1.y, tmpVector1.z);
+					if (values[x][y][z] > iso) {
+						isoCount++;
+					} else {
+						isoCount--;
+					}
+				}
+			}
+		}
+		return isoCount;
+    }
+	
+    private void clearField( final int xMin, final int xMax,
+			final int yMin, final int yMax, final int zMin, final int zMax) {
+		for (int x = xMin; x <= xMax; x++) {
+			for (int y = yMin; y <= yMax; y++) {
+				for (int z = zMin; z <= zMax; z++) {
+					values[x][y][z] = 0;
+				}
+			}
+		}
+    }
+    
+    private boolean populateFieldArray( ScalarField field, final float iso ) {
+    	int borderIsoCount = 0;
+    	// Populate Z border face
+    	borderIsoCount += populateField(field, iso, 0,     xSize,     0,     ySize, 0,     0);
+    	borderIsoCount += populateField(field, iso, 0,     xSize,     0,     ySize, zSize, zSize);
+    	// Populate Y border face
+    	borderIsoCount += populateField(field, iso, 0,     0,         0,     ySize, 1,     zSize - 1);
+    	borderIsoCount += populateField(field, iso, xSize, xSize,     0,     ySize, 1,     zSize - 1);
+    	// Populate X border face
+    	borderIsoCount += populateField(field, iso, 1,     xSize - 1, 0,     0,     1,     zSize - 1);
+    	borderIsoCount += populateField(field, iso, 1,     xSize - 1, ySize, ySize, 1,     zSize - 1);
+    	
+    	// optimization populate center
 
-    protected void populateFieldArray( ScalarField field ) {
-        for( int x = 0; x <= xSize; x++ ){
-            for( int y = 0; y <= ySize; y++ ){
-                for( int z = 0; z <= zSize; z++ ){
-                    gridToWorld( x, y, z, calcVector );
-                    values[x][y][z] = field.calculate( calcVector );
-                }
-            }
-        }
+    	int maxCount = ((xSize + 1) * (ySize + 1) * (zSize + 1)) - ((xSize - 1) * (ySize - 1) * (zSize - 1));
+    	boolean hasPolygons = borderIsoCount != maxCount & borderIsoCount != -maxCount;
+    	if(hasPolygons) {
+    		populateField(field, iso, 1, xSize - 1, 1, ySize - 1, 1, zSize - 1);
+    	} else {
+    		clearField(1, xSize - 1, 1, ySize - 1, 1, zSize - 1);
+    	}
+        return hasPolygons;
     }
 
-    protected int calculateCell( final float iso, final int xk, final int yk, final int zk ) {
+    private int calculateCell( final float iso, final int xk, final int yk, final int zk ) {
 
         int bits = 0;
 
@@ -245,21 +265,21 @@ public class ScalarFieldPolygonisator {
             return bits;
         }
 
-        calcVector.x = xk * cubeSize - boxSize.x;
-        calcVector.y = yk * cubeSize - boxSize.y;
-        calcVector.z = zk * cubeSize - boxSize.z;
-        calcVector1.x = calcVector.x + cubeSize;
-        calcVector1.y = calcVector.y + cubeSize;
-        calcVector1.z = calcVector.z + cubeSize;
+        tmpVector1.x = xk * cubeSize - boxSize.x;
+        tmpVector1.y = yk * cubeSize - boxSize.y;
+        tmpVector1.z = zk * cubeSize - boxSize.z;
+        tmpVector2.x = tmpVector1.x + cubeSize;
+        tmpVector2.y = tmpVector1.y + cubeSize;
+        tmpVector2.z = tmpVector1.z + cubeSize;
 
-        cellPoints[0].set( calcVector.x, calcVector.y, calcVector.z );
-        cellPoints[1].set( calcVector1.x, calcVector.y, calcVector.z );
-        cellPoints[2].set( calcVector1.x, calcVector.y, calcVector1.z );
-        cellPoints[3].set( calcVector.x, calcVector.y, calcVector1.z );
-        cellPoints[4].set( calcVector.x, calcVector1.y, calcVector.z );
-        cellPoints[5].set( calcVector1.x, calcVector1.y, calcVector.z );
-        cellPoints[6].set( calcVector1.x, calcVector1.y, calcVector1.z );
-        cellPoints[7].set( calcVector.x, calcVector1.y, calcVector1.z );
+        cellPoints[0].set( tmpVector1.x, tmpVector1.y, tmpVector1.z );
+        cellPoints[1].set( tmpVector2.x, tmpVector1.y, tmpVector1.z );
+        cellPoints[2].set( tmpVector2.x, tmpVector1.y, tmpVector2.z );
+        cellPoints[3].set( tmpVector1.x, tmpVector1.y, tmpVector2.z );
+        cellPoints[4].set( tmpVector1.x, tmpVector2.y, tmpVector1.z );
+        cellPoints[5].set( tmpVector2.x, tmpVector2.y, tmpVector1.z );
+        cellPoints[6].set( tmpVector2.x, tmpVector2.y, tmpVector2.z );
+        cellPoints[7].set( tmpVector1.x, tmpVector2.y, tmpVector2.z );
 
         calculateTetra( iso, 0, 4, 7, 6, xk, yk, zk );
         calculateTetra( iso, 0, 4, 6, 5, xk, yk, zk );
@@ -532,30 +552,33 @@ public class ScalarFieldPolygonisator {
         if( index != null ){
             return index;
         }
-        float ratio = 0.5f;
+        float ratio1 = 0.5f, ratio2 = 0.5f;
         final float value1 = tmpEdge.getValue1( this );
         final float value2 = tmpEdge.getValue2( this );
         if( value1 != value2 ){
-            ratio = ( value1 - iso ) / ( value1 - value2 );
+            ratio1 = ( value1 - iso ) / ( value1 - value2 );
+            ratio2 = 1f - ratio1;
         }
 
         final int currentVertexIndex = vertexBuffer.position() / 3;
 
-        calcVector1.set( cellPoints[v2].mult( ratio ) );
-        calcVector.set( cellPoints[v1] ).multLocal( 1 - ratio ).addLocal( calcVector1 ).addLocal(offset);
-        addVertex( calcVector.x, calcVector.y, calcVector.z );
+        tmpVector1.x = cellPoints[v2].x * ratio1 + cellPoints[v1].x * ratio2 + offset.x;
+        tmpVector1.y = cellPoints[v2].y * ratio1 + cellPoints[v1].y * ratio2 + offset.y;
+        tmpVector1.z = cellPoints[v2].z * ratio1 + cellPoints[v1].z * ratio2 + offset.z;
+        
+        addVertex( tmpVector1.x, tmpVector1.y, tmpVector1.z );
 
-        field.normal( calcVector, calcVector1 );
-        addNormal( calcVector1.x, calcVector1.y, calcVector1.z );
+        field.normal( tmpVector1, tmpVector2 );
+        addNormal( tmpVector2.x, tmpVector2.y, tmpVector2.z );
 
         if(doTexCoords) {
-        	field.textureCoords( calcVector, calcVector2f );
-        	addTextureCoord( calcVector2f.x, calcVector2f.y );
+        	field.textureCoords( tmpVector1, tmpVector2f );
+        	addTextureCoord( tmpVector2f.x, tmpVector2f.y );
         }
 
         if(doColors) {
-        	field.color( calcVector, calcColor );
-        	addColor( calcColor.r, calcColor.g, calcColor.b, calcColor.a );
+        	field.color( tmpVector1, tmpColor );
+        	addColor( tmpColor.r, tmpColor.g, tmpColor.b, tmpColor.a );
         }
 
         interpol.put( new Edge( tmpEdge ), currentVertexIndex );
@@ -565,7 +588,7 @@ public class ScalarFieldPolygonisator {
 
 
 
-    static class Edge {
+    private static final class Edge {
 
         int x1, y1, z1, x2, y2, z2;
 

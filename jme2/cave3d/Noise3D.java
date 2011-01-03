@@ -64,33 +64,37 @@ final class Noise3D {
 	}
 	
 	
-	public float getNoise(Vector3f point) {
-		float ax0 = point.x / waveLength.x;
-		float ay0 = point.y / waveLength.y;
-		float az0 = point.z / waveLength.z;
-
-        int x0 = (int) Math.floor(ax0);
-        int y0 = (int) Math.floor(ay0);
-        int z0 = (int) Math.floor(az0);
-
+	public final float getNoise(final float x, final float y, final float z) {
+		// X
+		float ax0 = x / waveLength.x;
+        int x0 = (int) ax0;
+        if(ax0 < 0f) x0--;
     	ax0 -= x0;
-    	ay0 -= y0;
-    	az0 -= z0;
-        
     	x0 %= size; 
-    	y0 %= size; 
-    	z0 %= size;
-    	
     	if(x0 < 0) x0 += size;
-    	if(y0 < 0) y0 += size;
-    	if(z0 < 0) z0 += size;
-    	
         int x1 = (x0 + 1) % size;
-        int y1 = (y0 + 1) % size;
-        int z1 = (z0 + 1) % size;
         float ax1 = 1f - ax0;
+    	
+        // Y
+		float ay0 = y / waveLength.y;
+        int y0 = (int) ay0;
+        if(ay0 < 0f) y0--;
+    	ay0 -= y0;
+    	y0 %= size; 
+    	if(y0 < 0) y0 += size;
+        int y1 = (y0 + 1) % size;
         float ay1 = 1f - ay0;
+    	
+        // Z
+		float az0 = z / waveLength.z;
+        int z0 = (int) az0;
+        if(az0 < 0f) z0--;
+    	az0 -= z0;
+    	z0 %= size;
+    	if(z0 < 0) z0 += size;
+        int z1 = (z0 + 1) % size;
         float az1 = 1f - az0;
+
        
         return noise[x0][y0][z0] * ax1 * ay1 * az1 +
         	   noise[x0][y0][z1] * ax1 * ay1 * az0 +
