@@ -1,17 +1,24 @@
 package cave3d;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.jme.app.SimpleGame;
+import com.jme.bounding.BoundingBox;
 import com.jme.image.Texture;
-import com.jme.input.MouseInput;
+import com.jme.input.KeyBindingManager;
+import com.jme.input.KeyInput;
 import com.jme.light.PointLight;
+import com.jme.math.Vector3f;
+import com.jme.renderer.ColorRGBA;
 import com.jme.renderer.Renderer;
+import com.jme.scene.shape.Sphere;
 import com.jme.scene.state.CullState;
-import com.jme.scene.state.CullState.Face;
 import com.jme.scene.state.GLSLShaderObjectsState;
+import com.jme.scene.state.MaterialState;
 import com.jme.scene.state.TextureState;
+import com.jme.scene.state.CullState.Face;
 import com.jme.system.DisplaySystem;
 import com.jme.util.TextureManager;
 import com.jme.util.resource.ResourceLocatorTool;
@@ -34,17 +41,52 @@ public class CaveGenerator extends SimpleGame {
  
     private CaveNode caveNode = null; 
     
+    private final ArrayList<CollisionNode> collisionNodes = new ArrayList<CollisionNode>();
+    
+    
 	protected void simpleUpdate() {
 		PointLight pl = (PointLight)lightState.get(0);
 		pl.getLocation().set(cam.getLocation());
 		caveNode.update(cam);
+
+		float time = timer.getTimePerFrame();
+
+		for (int i = 0; i < collisionNodes.size(); i++) {
+			collisionNodes.get(i).update(time, caveNode.getScalarField());
+		}
+		if ( KeyBindingManager.getKeyBindingManager().isValidCommand(
+                "shoot", false ) ) {
+			shoot();
+		}
+	}
+	
+	private void shoot() {
+       	Vector3f velocity = new Vector3f(cam.getDirection());
+       	velocity.multLocal(20f);
+		CollisionNode node = new CollisionNode(velocity);
+    	node.attachChild(new Sphere("Sphere", 10, 10, 0.5f));
+    	node.setLocalTranslation(new Vector3f(cam.getLocation()));
+    	node.setModelBound(new BoundingBox());
+    	node.updateModelBound();
+    	MaterialState yellow =  display.getRenderer().createMaterialState();
+		yellow.setAmbient(new ColorRGBA(0.1f,0.1f,0.1f,1.0f));
+		yellow.setEmissive(new ColorRGBA(0,0,0,0));
+		yellow.setDiffuse(new ColorRGBA(1.0f,1.0f,0.0f,1.0f));
+		yellow.setSpecular(new ColorRGBA(1,0,0,1.0f));
+		yellow.setShininess(32);
+		node.setRenderState(yellow);
+    	rootNode.attachChild(node);
+    	rootNode.updateRenderState();
+    	collisionNodes.add(node);
 	}
 	
 	protected void simpleInitGame() {
 		// setCursorVisible(true) for debugging in Ubuntu
-		MouseInput.get().setCursorVisible(true);
+		//MouseInput.get().setCursorVisible(true);
 		display.setTitle("Cave Generator");
 		
+        KeyBindingManager.getKeyBindingManager().set( "shoot",
+                KeyInput.KEY_SPACE );
 		
 		try {
 			ClassLoader classLoader = CaveGenerator.class.getClassLoader();

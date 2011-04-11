@@ -42,6 +42,10 @@ public class CaveNode extends Node {
 		thread.start();
 	}
 	
+	public CaveScalarField getScalarField() {
+		return scalarField;
+	}
+	
 	public void update(Camera cam) {
 		camGridCoord.set(cam.getLocation()).divideLocal(meshSize);
 		camGridCoord.set(Math.round(camGridCoord.x), Math.round(camGridCoord.y), Math.round(camGridCoord.z));
