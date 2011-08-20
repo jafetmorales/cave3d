@@ -1,0 +1,51 @@
+uniform sampler2D sampler;
+uniform sampler2D samplerBump;
+
+varying vec4 vertex, color;
+varying vec3 normal, vNormal, lightDir, eyeVec;
+varying float att;
+
+
+void main(void)
+{
+	// tri-planar texture bending factor
+ 	vec3 blending = (abs( normal ) - 0.2) * 7.0;  
+    blending = normalize(max(blending, 0.0));      // Force weights to sum to 1.0 (very important!)  
+    blending /= (blending.x + blending.y + blending.z ).xxx;
+    
+    //blending = abs( normal );
+    vec3 signedBlending = sign(normal) * blending;
+
+	// texture coords
+	vec4 coords = vertex * 0.05;
+	
+	
+	// Blend the results of the 3 planar projections.
+	//vec4 col1 = texture2D( sampler, coords.yz );
+	//vec4 col2 = texture2D( sampler, coords.zx );
+	//vec4 col3 = texture2D( sampler, coords.xy );
+	//vec4 colBlended = col1 * blending.x + col2 * blending.y + col3 * blending.z;
+	vec4 colBlended = color;
+	
+	
+	// Blend the results of the 3 planar projections.
+	vec3 nor1 = signedBlending.x != 0.0 ? texture2D( samplerBump, coords.yz ).zxy - 0.5 : vec3(0.0, 0.0, 0.0);
+    vec3 nor2 = signedBlending.y != 0.0 ? texture2D( samplerBump, coords.zx ).yzx - 0.5 : vec3(0.0, 0.0, 0.0);
+    vec3 nor3 = signedBlending.z != 0.0 ? texture2D( samplerBump, coords.xy ).xyz - 0.5 : vec3(0.0, 0.0, 0.0);
+    vec3 norBlended = nor1 * signedBlending.x + nor2 * signedBlending.y + nor3 * signedBlending.z;
+    //vec3 norBlended = normal;
+
+	vec3 N = normalize(gl_NormalMatrix * norBlended);
+	vec3 L = normalize(lightDir);
+	
+	float lambertTerm = max(0.1, dot(N,L));
+	
+	colBlended = colBlended * lambertTerm;
+	
+    vec3 E = normalize(eyeVec);
+ 	vec3 R = reflect(-L, N);
+ 	float specular = 0.25 * pow( max(dot(R, E), 0.0), 64.0 );                   
+
+	gl_FragColor = (colBlended + specular) * att;
+
+}
