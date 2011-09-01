@@ -38,6 +38,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import com.ardor3d.math.ColorRGBA;
 import com.ardor3d.math.Vector2;
@@ -88,6 +89,7 @@ final class ScalarFieldPolygonisator {
     private final Vector3 tmpVector2 = new Vector3();
     private final Vector2 tmpVector2f = new Vector2();
 	private final Vector3 offset = new Vector3();
+	private final Stack<Edge> edgeStack = new Stack<Edge>();
 
 
     public ScalarFieldPolygonisator(double boxSize, int size, final ScalarField field, boolean doTexCoords, boolean doColors) {
@@ -129,17 +131,17 @@ final class ScalarFieldPolygonisator {
         }
 
         if(doTexCoords) {
-//	        final FloatBufferData texCoords = meshData.getTextureCoords( 0 );
-//	        if( texCoords != null ){
-//	            textureBuffer = texCoords.coords;
-//	        } else{
-//	            textureBuffer = null;
-//	        }
-//	        if( textureBuffer == null ){
-//	            textureBuffer = BufferUtils.createFloatBuffer( 16000 );
-//	        } else{
-//	            textureBuffer.clear();
-//	        }
+	        final FloatBufferData texCoords = meshData.getTextureCoords( 0 );
+	        if( texCoords != null ){
+	            textureBuffer = texCoords.getBuffer();
+	        } else{
+	            textureBuffer = null;
+	        }
+	        if( textureBuffer == null ){
+	            textureBuffer = BufferUtils.createFloatBuffer( 16000 );
+	        } else{
+	            textureBuffer.clear();
+	        }
         }
 
         indexBuffer = (IntBuffer) meshData.getIndexBuffer();
@@ -148,6 +150,8 @@ final class ScalarFieldPolygonisator {
         } else{
             indexBuffer.clear();
         }
+        edgeStack.addAll(interpol.keySet());
+        
         
         interpol.clear();
     	this.offset.set(offset);
@@ -168,8 +172,8 @@ final class ScalarFieldPolygonisator {
         }
         
         if(doTexCoords) {
-//        	textureBuffer.flip();
-//        	meshData.setTextureCoords( new TexCoords( textureBuffer ) );
+        	textureBuffer.flip();
+        	meshData.setTextureCoords( new FloatBufferData( textureBuffer, 2 ), 0 );
         }
     }
 
@@ -455,7 +459,7 @@ final class ScalarFieldPolygonisator {
         return buffer;
     }
 
-    private int interpolate( double iso, int v1, int v2, int xk, int yk, int zk ) {
+    private int interpolate( final double iso, int v1, int v2, final int xk, final int yk, final int zk ) {
         if( v1 > v2 ){
             final int tmp = v2;
             v2 = v1;
@@ -579,21 +583,40 @@ final class ScalarFieldPolygonisator {
         	addColor( tmpColor );
         }
 
-        interpol.put( new Edge( tmpEdge ), currentVertexIndex );
-
+        Edge edge;
+        if(edgeStack.isEmpty()) {
+        	edge = new Edge();
+        } else {
+        	edge = edgeStack.pop();
+        }
+    	edge.set(tmpEdge);
+        interpol.put( edge, currentVertexIndex );
         return currentVertexIndex;
     }
-
-
 
     private static final class Edge {
 
         int x1, y1, z1, x2, y2, z2;
 
         private Edge() {
+            x1 = 0;
+            y1 = 0;
+            z1 = 0;
+            x2 = 0;
+            y2 = 0;
+            z2 = 0;
         }
 
-        public Edge( Edge e ) {
+        private Edge( Edge e ) {
+            x1 = e.x1;
+            y1 = e.y1;
+            z1 = e.z1;
+            x2 = e.x2;
+            y2 = e.y2;
+            z2 = e.z2;
+        }
+        
+        private void set( Edge e ) {
             x1 = e.x1;
             y1 = e.y1;
             z1 = e.z1;
