@@ -11,6 +11,7 @@ import com.ardor3d.renderer.Camera;
 import com.ardor3d.renderer.state.CullState;
 import com.ardor3d.renderer.state.GLSLShaderObjectsState;
 import com.ardor3d.renderer.state.TextureState;
+import com.ardor3d.renderer.state.ZBufferState;
 import com.ardor3d.util.ReadOnlyTimer;
 import com.ardor3d.util.TextureManager;
 import com.ardor3d.util.resource.ResourceLocatorTool;
@@ -34,7 +35,6 @@ public class CaveGenerator extends ExampleBase  {
     
     private CaveNode caveNode = null; 
 
-
     @Override
     protected void updateExample(final ReadOnlyTimer timer) {
 		PointLight pl = (PointLight)_lightState.get(0);
@@ -51,6 +51,9 @@ public class CaveGenerator extends ExampleBase  {
 		
         caveNode = new CaveNode(SEED, 64f, 12);
 		
+		ZBufferState zBufferState = new ZBufferState();
+		caveNode.setRenderState(zBufferState);
+        
 		// setup light
 		PointLight pl = (PointLight)_lightState.get(0);
 		pl.setConstant(1f);
