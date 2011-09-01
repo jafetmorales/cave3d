@@ -31,12 +31,12 @@ final class Noise3D {
 			for (int j = 0; j < size; j++) {
 				for (int k = 0; k < size; k++) {
 					if(gaussian) {
-						double r = 0.15f * (double) random.nextGaussian();
+						double r = 0.15f * random.nextGaussian();
 						if(r < 0f) r = -r;
 						if(r > 1f) r = 1f;
 						noise[i][j][k] = min + amplitude * r;
 					} else {
-						noise[i][j][k] = min + amplitude * ((double) random.nextFloat());
+						noise[i][j][k] = min + amplitude * random.nextDouble();
 					}
 				}
 			}
