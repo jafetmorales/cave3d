@@ -7,13 +7,12 @@ import com.ardor3d.bounding.BoundingBox;
 import com.ardor3d.math.Vector3;
 import com.ardor3d.math.type.ReadOnlyVector3;
 import com.ardor3d.renderer.Camera;
+import com.ardor3d.scenegraph.hint.DataMode;
 
 public class CaveNode extends com.ardor3d.scenegraph.Node {
 	
 	private static final long serialVersionUID = 1L;
 
-	private final CaveScalarField scalarField;
-    
     private final ScalarFieldPolygonisator polygonisator;
     
     private final Vector3 center = new Vector3();
@@ -35,8 +34,9 @@ public class CaveNode extends com.ardor3d.scenegraph.Node {
 	private final Stack<CaveTriMesh> meshStack = new Stack<CaveTriMesh>();
 
 	public CaveNode(long seed, float meshSize, int gridSize) {
+		getSceneHints().setDataMode(DataMode.VBO);
         this.meshSize = meshSize;
-		scalarField = new CaveScalarField(seed, 128f, 4f);
+        CaveScalarField scalarField = new CaveScalarField(seed, 128f, 4f);
 		polygonisator = new ScalarFieldPolygonisator(meshSize, gridSize, scalarField, false, true);
 		box = new BoundingBox(new Vector3(), meshSize / 2f, meshSize / 2f, meshSize / 2f);
 		
@@ -44,11 +44,14 @@ public class CaveNode extends com.ardor3d.scenegraph.Node {
 		thread.start();
 	}
 	
-	public CaveScalarField getScalarField() {
-		return scalarField;
-	}
+	private final Vector3 lastUpdatePostition = new Vector3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
 	
 	public void update(Camera cam) {
+		if(lastUpdatePostition.distance(cam.getLocation()) < 1.0) {
+			return;
+		}
+		lastUpdatePostition.set(cam.getLocation());
+		
 		camGridCoord.set(cam.getLocation()).divideLocal(meshSize);
 		camGridCoord.set(Math.round(camGridCoord.getX()), Math.round(camGridCoord.getY()), Math.round(camGridCoord.getZ()));
 		
@@ -60,9 +63,11 @@ public class CaveNode extends com.ardor3d.scenegraph.Node {
 						key.set(camGridCoord).addLocal(x,y,z);
 						key.multiply(meshSize, center);
 						box.setCenter(center);
+						final int state = cam.getPlaneState();
 						if(cam.contains(box) != Camera.FrustumIntersect.Outside) {
-							generatorThread.addcaveMesh(key);
+						    generatorThread.addcaveMesh(key);
 						}
+						cam.setPlaneState(state);
 					}
 				}
 			}
@@ -117,6 +122,7 @@ public class CaveNode extends com.ardor3d.scenegraph.Node {
 						attachChild(mesh);
 						mesh.updateWorldBound(false);
 					}
+				    // System.out.println(mesh.getMeshData().getVertexCount());
 					//System.out.println(todoStack.size() + "  " + getQuantity());
 				}
 				try {
